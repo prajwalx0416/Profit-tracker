@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trade journal</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f7f9;--pn:#fff;--ink:#1e293b;--mu:#64748b;--ln:#e2e6ec;--up:#0f9d58;--dn:#d93a3a;--gold:#a16207;--oil:#1d4ed8}
+@media(prefers-color-scheme:dark){:root{--bg:#12161c;--pn:#1a1f27;--ink:#e8ecf2;--mu:#93a0b2;--ln:#2a313b;--up:#3ddc84;--dn:#ff6b6b;--gold:#f5b942;--oil:#6ea8ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:24px 16px 56px;display:grid;gap:28px}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}p{margin:0}
+.mu{color:var(--mu)}.up{color:var(--up)}.dn{color:var(--dn)}
+.cd{display:flex;align-items:baseline;gap:14px;margin-top:2px}
+.cd b{font-size:72px;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.cd small{font-size:13px;color:var(--mu)}
+.bar{height:3px;background:var(--ln);margin-top:14px;border-radius:3px}.bar i{display:block;height:100%;background:var(--ink);border-radius:3px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:18px 12px;border-top:1px solid var(--ln);padding-top:18px}
+.stat small{display:block;color:var(--mu);font-size:13px}.stat b{font-size:20px;font-variant-numeric:tabular-nums}
+.dots i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:8px 5px 0 0}.dots .u{background:var(--up)}.dots .d{background:var(--dn)}
+#stk b{font-size:20px;display:block}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px}
+.pn{background:var(--pn);border:1px solid var(--ln);border-top:3px solid var(--k);border-radius:10px;padding:14px}
+.pn h3{margin:0 0 10px;font-size:15px;color:var(--k)}
+.seg,.tabs{display:flex;gap:6px;margin-bottom:10px}
+.seg button,.tabs button{flex:1;padding:8px;border:1px solid var(--ln);background:none;color:var(--mu);border-radius:8px;font:inherit;cursor:pointer}
+.seg .on,.tabs .on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.row{display:flex;gap:8px;align-items:flex-end;margin-bottom:10px}.row:last-child{margin:0}
+label{flex:1;display:block;font-size:13px;color:var(--mu)}
+input{width:100%;margin-top:4px;padding:10px;border:1px solid var(--ln);border-radius:8px;background:none;color:var(--ink);font:inherit}
+.dt{max-width:220px}
+.btn{flex:1;padding:11px 14px;border:0;border-radius:8px;font:600 15px system-ui,sans-serif;color:#fff;cursor:pointer}
+.btn:active{transform:scale(.98)}.p{background:#0f9d58}.l{background:#d93a3a}.n{background:var(--ink);color:var(--bg);flex:none}
+.r{display:grid;grid-template-columns:62px 1fr auto auto 22px;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--ln);font-size:14px}
+.r b{font-variant-numeric:tabular-nums;text-align:right}
+.x{border:0;background:none;color:var(--mu);font-size:18px;cursor:pointer;padding:0}
+footer{font-size:13px}footer button,footer label{display:inline;border:0;background:none;color:var(--ink);text-decoration:underline;font:inherit;cursor:pointer;padding:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{text-align:left;padding:12px 14px;border:1px solid var(--ln);border-left:3px solid var(--k);border-radius:10px;background:var(--pn);color:var(--ink);font:inherit;cursor:pointer}
+.tile small{display:block;color:var(--mu);font-size:13px}.tile b{font-size:18px;font-variant-numeric:tabular-nums}
+dialog{width:min(560px,calc(100% - 24px));max-height:80vh;overflow:auto;border:1px solid var(--ln);border-radius:12px;background:var(--pn);color:var(--ink);padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.wh{display:flex;justify-content:space-between;align-items:center}.wh h2{margin:0;font-size:17px}
+#wsum{margin:4px 0 8px}#wsum b{color:var(--ink)}
+:focus-visible{outline:2px solid var(--oil);outline-offset:2px}
+#msg{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}#msg.show{opacity:1}
+</style>
+</head>
+<body>
+<main>
+<header><h1>Trade journal</h1><p class="mu">Gold and US oil profit and loss</p></header>
+
+<section>
+<p class="mu">Trading days until New Year 2027</p>
+<div class="cd"><b id="cdn">0</b><small id="cds"></small></div>
+<div class="bar"><i id="bar"></i></div>
+</section>
+
+<section class="stats" id="stats"></section>
+
+<section><div class="tiles" id="tiles"></div></section>
+
+<section><h2>Streak</h2><div id="stk"></div></section>
+
+<section>
+<h2>Log a trade</h2>
+<label class="dt">Date for new entries<input id="dt" type="date"></label>
+<div class="two" id="q"></div>
+</section>
+
+<section>
+<h2>Deposit or withdraw</h2>
+<div class="row"><label style="flex:2">Amount ($)<input id="fa" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></label><button class="btn n" data-fd="dep">Deposit</button><button class="btn n" data-fd="wd">Withdraw</button></div>
+</section>
+
+<section>
+<h2>History</h2>
+<div class="tabs"><button data-f="all">All</button><button data-f="gold">Gold</button><button data-f="oil">US oil</button><button data-f="fund">Funds</button></div>
+<div id="hist"></div>
+</section>
+
+<footer class="mu">Data stays in this browser. <button id="ex">Export backup</button> <label>Import<input id="im" type="file" accept=".json" hidden></label></footer>
+</main>
+<dialog id="win"><div class="wh"><h2 id="wt"></h2><button class="x" id="wc" aria-label="Close">×</button></div><p class="mu" id="wsum"></p><div id="wl"></div></dialog>
+<div id="msg"></div>
+
+<script>
+const $=id=>document.getElementById(id),K='tradeJournal.v1',L={gold:'Gold',oil:'US oil',dep:'Deposit',wd:'Withdraw'};
+let E=[],F='all';
+try{const x=JSON.parse(localStorage.getItem(K));if(Array.isArray(x))E=x}catch(_){}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(E))}catch(_){msg('Could not save in this browser')}},
+usd=n=>(n<0?'−':'')+'$'+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}),
+sg=n=>(n>0?'+':'')+usd(n),cl=n=>n>0?'up':n<0?'dn':'',
+today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10),
+isT=e=>e.k=='gold'||e.k=='oil';
+function msg(t){const m=$('msg');m.textContent=t;m.classList.add('show');clearTimeout(msg.t);msg.t=setTimeout(()=>m.classList.remove('show'),2000)}
+
+// Trading days left (Mon to Fri) until 1 Jan 2027, today included
+function cd(){
+ const n=new Date(),e=new Date(2027,0,1);let w=0,c=0;
+ for(let d=new Date(n.getFullYear(),n.getMonth(),n.getDate());d<e;d.setDate(d.getDate()+1)){c++;if(d.getDay()%6)w++}
+ $('cdn').textContent=w;
+ $('cds').innerHTML=c?(w==1?'trading day':'trading days')+' left<br>Saturdays and Sundays skipped ('+(c-w)+' days)':'Happy New Year 2027';
+ $('bar').style.width=Math.max(0,Math.min(100,(261-w)/2.61))+'%';
+}
+
+// Streaks by trading day: a day wins or loses on its net P/L
+function streaks(){
+ const by={};E.filter(isT).forEach(e=>by[e.d]=(by[e.d]||0)+e.a);
+ const r=Object.keys(by).sort().map(d=>Math.sign(by[d])).filter(Boolean);
+ let bw=0,bl=0,run=0,prev=0;
+ r.forEach(x=>{run=x==prev?run+1:1;prev=x;x>0?bw=Math.max(bw,run):bl=Math.max(bl,run)});
+ return{r,cur:run,sign:prev,bw,bl};
+}
+
+let W='';
+const WD={profit:['Profits','var(--up)',e=>isT(e)&&e.a>0],loss:['Losses','var(--dn)',e=>isT(e)&&e.a<0],dep:['Deposits','var(--ink)',e=>e.k=='dep'],wd:['Withdrawals','var(--ink)',e=>e.k=='wd']};
+function render(){
+ const s=k=>E.filter(e=>e.k==k).reduce((t,e)=>t+e.a,0),g=s('gold'),o=s('oil'),dp=s('dep'),wd=s('wd'),net=g+o,
+ tr=E.filter(isT),win=tr.filter(e=>e.a>0).length,z=streaks(),
+ st=(n,t,c='')=>`<div class="stat"><small>${n}</small><b class="${c}">${t}</b></div>`;
+ $('stats').innerHTML=st('Balance',usd(dp-wd+net))+st('Net P/L',sg(net),cl(net))+st('Gold P/L',sg(g),cl(g))+st('US oil P/L',sg(o),cl(o))
+  +st('Win rate',tr.length?Math.round(win/tr.length*100)+'%':'–')+st('Trades',tr.length);
+ $('stk').innerHTML=`<b class="${cl(z.sign)}">${z.cur?z.cur+(z.sign>0?' winning':' losing')+(z.cur>1?' days':' day')+' in a row':'No streak yet'}</b>
+  <span class="mu">Best win streak ${z.bw}, worst loss streak ${z.bl}</span><div class="dots">${z.r.slice(-20).map(x=>`<i class="${x>0?'u':'d'}"></i>`).join('')}</div>`;
+ const list=E.filter(e=>F=='all'||(F=='fund'?!isT(e):e.k==F)).sort((a,b)=>b.d.localeCompare(a.d)||b.id-a.id);
+ const rows=l=>l.length?l.map(e=>{const t=isT(e);
+  return `<div class="r"><span class="mu">${new Date(e.d+'T00:00').toLocaleDateString(undefined,{day:'numeric',month:'short',year:'2-digit'})}</span>
+  <span>${L[e.k]}${t?' '+e.s:''}</span><span class="mu">${t?e.lot+' lot':''}</span>
+  <b class="${t?cl(e.a):''}">${t?sg(e.a):(e.k=='dep'?'+':'−')+usd(e.a)}</b><button class="x" data-del="${e.id}" aria-label="Delete entry">×</button></div>`}).join('')
+  :'<p class="mu">Nothing here yet.</p>';
+ $('hist').innerHTML=rows(list);
+ document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.f==F));
+ $('tiles').innerHTML=Object.entries(WD).map(([k,[n,c,f]])=>{const l=E.filter(f);return `<button class="tile" style="--k:${c}" data-w="${k}"><small>${n} (${l.length})</small><b>${usd(l.reduce((q,e)=>q+e.a,0))}</b></button>`}).join('');
+ if(W){const[n,,f]=WD[W],l=E.filter(f).sort((a,b)=>b.d.localeCompare(a.d)||b.id-a.id);
+  $('wt').textContent=n;$('wsum').innerHTML=`Total <b>${usd(l.reduce((q,e)=>q+e.a,0))}</b> from ${l.length} ${l.length==1?'entry':'entries'}`;$('wl').innerHTML=rows(l)}
+}
+
+const card=(k,n)=>`<div class="pn" style="--k:var(--${k})"><h3>${n}</h3>
+<div class="seg" data-k="${k}"><button class="on" data-s="Buy">Buy</button><button data-s="Sell">Sell</button></div>
+<div class="row"><label>Lot size<input id="${k}l" type="number" inputmode="decimal" step="0.01" min="0.01" value="0.01"></label>
+<label>Amount ($)<input id="${k}a" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></label></div>
+<div class="row"><button class="btn p" data-k="${k}" data-g="1">+ Profit</button><button class="btn l" data-k="${k}" data-g="-1">− Loss</button></div></div>`;
+
+function add(k,g){
+ const a=parseFloat($(k+'a').value),lot=parseFloat($(k+'l').value),d=$('dt').value;
+ if(!d||!(lot>0)||!(a>0))return msg('Enter a date, lot size and amount');
+ const s=document.querySelector(`.seg[data-k="${k}"] .on`).dataset.s;
+ E.push({id:Date.now(),d,k,s,lot,a:g*a});$(k+'a').value='';save();render();msg((g>0?'Profit':'Loss')+' logged');
+}
+function fund(k){
+ const a=parseFloat($('fa').value),d=$('dt').value;
+ if(!d||!(a>0))return msg('Enter a date and amount');
+ E.push({id:Date.now(),d,k,a});$('fa').value='';save();render();msg(L[k]+' logged');
+}
+
+document.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;const D=b.dataset;
+ if(D.s)b.parentElement.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x==b));
+ else if(D.g)add(D.k,+D.g);
+ else if(D.fd)fund(D.fd);
+ else if(D.f){F=D.f;render()}
+ else if(D.w){W=D.w;render();$('win').showModal()}
+ else if(b.id=='wc')$('win').close()
+ else if(D.del&&confirm('Delete this entry?')){E=E.filter(x=>String(x.id)!=D.del);save();render()}
+});
+$('ex').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(E)],{type:'application/json'}));a.download='trade-journal-'+today()+'.json';a.click()};
+$('im').onchange=e=>{const f=e.target.files[0];if(!f)return;
+ f.text().then(t=>{try{const x=JSON.parse(t);if(!Array.isArray(x))throw 0;
+  E=x.filter(v=>v&&L[v.k]&&/^\d{4}-\d\d-\d\d$/.test(v.d)&&isFinite(v.a)).map((v,i)=>({id:+v.id||Date.now()+i,d:v.d,k:v.k,s:v.s=='Sell'?'Sell':'Buy',lot:+v.lot||0,a:+v.a}));
+  save();render();msg('Backup imported')}catch(_){msg('That file is not a valid backup')}});e.target.value=''};
+
+$('q').innerHTML=card('gold','Gold (XAUUSD)')+card('oil','US oil (WTI)');
+$('win').onclose=()=>{W=''};
+$('dt').value=today();render();cd();setInterval(cd,18e5);
+</script>
+</body>
+</html>
